@@ -1,6 +1,5 @@
-## Feign源码分析
 
-### 猜想
+## 猜想
 Feign 基本使用步骤：
 1. 引入`spring-cloud-starter-openfeign`依赖包。
 2. 定义接口，接口添加`@FeignClient`注解修饰。`@FeignClient`中定义调用地址或者服务名。
@@ -13,9 +12,39 @@ Feign 基本使用步骤：
 2. 启动类上添加`@EnableFeignClients`，应该是这个注解通过某种方式创建了被`@FeignClient`修饰的接口的代理类，并注入到Spring 容器中。
 3. `FeignClient`中可以定义调用地址或服务名，如果定义服务名，那么URI替换有可能是Ribbon实现的。
 
-### 分析验证
+## 分析验证
 
-首选，关注`@EnableFeignClients`源码实现。
+项目引入`spring-cloud-starter-openfeign`后，执行`mvn dependency:tree`查看依赖树。
+~~~shell script
+[INFO] +- org.springframework.cloud:spring-cloud-starter-openfeign:jar:2.2.8.RELEASE:compile
+[INFO] |  +- org.springframework.cloud:spring-cloud-starter:jar:2.2.8.RELEASE:compile
+[INFO] |  |  +- org.springframework.cloud:spring-cloud-context:jar:2.2.8.RELEASE:compile
+[INFO] |  |  \- org.springframework.security:spring-security-rsa:jar:1.0.9.RELEASE:compile
+[INFO] |  |     \- org.bouncycastle:bcpkix-jdk15on:jar:1.64:compile
+[INFO] |  |        \- org.bouncycastle:bcprov-jdk15on:jar:1.64:compile
+[INFO] |  +- org.springframework.cloud:spring-cloud-openfeign-core:jar:2.2.8.RELEASE:compile
+[INFO] |  |  +- org.springframework.boot:spring-boot-starter-aop:jar:2.3.0.RELEASE:compile
+[INFO] |  |  |  \- org.aspectj:aspectjweaver:jar:1.9.5:compile
+[INFO] |  |  \- io.github.openfeign.form:feign-form-spring:jar:3.8.0:compile
+[INFO] |  |     +- io.github.openfeign.form:feign-form:jar:3.8.0:compile
+[INFO] |  |     \- commons-fileupload:commons-fileupload:jar:1.4:compile
+[INFO] |  |        \- commons-io:commons-io:jar:2.2:compile
+[INFO] |  +- org.springframework.cloud:spring-cloud-commons:jar:2.2.8.RELEASE:compile
+[INFO] |  |  \- org.springframework.security:spring-security-crypto:jar:5.3.2.RELEASE:compile
+[INFO] |  +- io.github.openfeign:feign-core:jar:10.12:compile
+[INFO] |  +- io.github.openfeign:feign-slf4j:jar:10.12:compile
+[INFO] |  |  \- org.slf4j:slf4j-api:jar:1.7.30:compile
+[INFO] |  \- io.github.openfeign:feign-hystrix:jar:10.12:compile
+[INFO] |     +- com.netflix.archaius:archaius-core:jar:0.7.6:compile
+[INFO] |     |  \- com.google.code.findbugs:jsr305:jar:3.0.1:runtime
+[INFO] |     \- com.netflix.hystrix:hystrix-core:jar:1.5.18:compile
+[INFO] |        \- org.hdrhistogram:HdrHistogram:jar:2.1.9:compile
+~~~
+通过maven依赖树可以看到引入`spring-cloud-starter-openfeign`后，引入了`spring-cloud-openfeign-core`和`feign-core`以及`feign-hystrix`。
+### Spring 容器装载 
+
+#### EnableFeignClients注解
+首先，关注`@EnableFeignClients`源码实现。
 ~~~java
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
@@ -26,6 +55,7 @@ public @interface EnableFeignClients {
     /* 省略 */
 }
 ~~~
+#### FeignClientsRegistrar
 `FeignClientsRegistrar`实现了`ImportBeanDefinitionRegistrar`接口。下面重点关注`registerBeanDefinitions`方法实现。
 ~~~java
 class FeignClientsRegistrar
@@ -166,6 +196,7 @@ class FeignClientsRegistrar
 	}
 }
 ~~~
+#### FeignClientFactoryBean
 接下来聚焦到`FeignClientFactoryBean`，看一看`FeignClientFactoryBean`具体是怎么创建Bean的。
 ~~~java
 public class FeignClientFactoryBean implements FactoryBean<Object>, InitializingBean,
@@ -184,6 +215,7 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, Initializing
     }
 }
 ~~~
+#### spring.factories文件
 找到`spring-cloud-openfeign-core-2.2.8.RELEASE.jar!/META-INF/spring.factories`，来看看`spring.factories`定义了什么。
 ~~~properties
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
@@ -194,3 +226,11 @@ org.springframework.cloud.openfeign.encoding.FeignAcceptGzipEncodingAutoConfigur
 org.springframework.cloud.openfeign.encoding.FeignContentGzipEncodingAutoConfiguration,\
 org.springframework.cloud.openfeign.loadbalancer.FeignLoadBalancerAutoConfiguration
 ~~~
+> FeignAutoConfiguration 装载Feign核心组件，包括FeignContext、Targeter。
+> FeignRibbonClientAutoConfiguration 项目中存在Ribbon负载均衡时实现基于Ribbon 的Client创建。支持HttpClient、OkHttp等。
+> FeignAcceptGzipEncodingAutoConfiguration、FeignContentGzipEncodingAutoConfiguration 报文压缩
+> FeignLoadBalancerAutoConfiguration 非Ribbon情况下创建Client。
+
+#### FeignAutoConfiguration
+
+
