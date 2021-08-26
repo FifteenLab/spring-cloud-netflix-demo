@@ -1,7 +1,24 @@
-[TOC]
+* [Ribbon](#ribbon)
+  * [官网文档](#官网文档)
+  * [基本使用](#基本使用)
+  * [源码分析](#源码分析)
+* [Feign](#feign)
+  * [基本使用](#基本使用-1)
+  * [使用OkHttp](#使用okhttp)
+* [Eureka Server](#eureka-server)
+  * [官网文档](#官网文档-1)
+  * [基本使用](#基本使用-2)
+  * [Eureka Server 安全](#eureka-server-安全)
+* [Eureka Client](#eureka-client)
+  * [官网文档](#官网文档-2)
+  * [基本使用](#基本使用-3)
+* [Actuator](#actuator)
+  * [官网文档](#官网文档-3)
+  * [基本使用](#基本使用-4)
+
 ## Ribbon
-### 官方文档
-https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#spring-cloud-ribbon
+### 官网文档
+[Spring Cloud Netflix Ribbon](https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#spring-cloud-ribbon)
 
 ### 基本使用
 1、添加Ribbon Starter依赖
@@ -32,7 +49,7 @@ user-server.ribbon.listOfServers=localhost:8081,localhost:8083
 ~~~
 
 ### 源码分析
-<a href="ribbon.md">Ribbon源码分析</a>
+参见 [Ribbon.md](ribbon.md)
 
 ## Feign 
 ### 
@@ -79,10 +96,10 @@ public class OrderServerApplication {
 ~~~
 
 ## Eureka Server
-### 官网地址
-https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#spring-cloud-eureka-server
+### 官网文档
+[Spring Cloud Netflix Eureka Server](https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#spring-cloud-eureka-server)
 
-### 基础应用
+### 基本使用
 参考：https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#netflix-eureka-server-starter
 
 1、创建Spring-boot项目 pom.xml 添加eureka-server依赖包
@@ -121,8 +138,9 @@ eureka.client.serviceUrl.defaultZone=http://${eureka.instance.hostname}:${server
 
 4、启动spring-boot项目，浏览器访问http://localhost:8761
 
-### Eureka Server 安全性
-参考：https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#securing-the-eureka-server
+### Eureka Server 安全
+
+参考：[securing-the-eureka-server](https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#securing-the-eureka-server)
 
 1、引入Spring Security 依赖
 ~~~xml
@@ -149,10 +167,11 @@ spring.security.user.password=123456
 ~~~
 
 ## Eureka Client
-### 官网地址
-https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#service-discovery-eureka-clients
+### 官网文档
+[Spring Cloud Netflix Eureka Client](https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#service-discovery-eureka-clients)
 
-### 基础应用
+
+### 基本使用
 1、Spring Boot项目添加eureka-client 依赖。
 ~~~xml
 <dependency>
@@ -178,10 +197,10 @@ public class UserServerApplication {
 ~~~
 
 ## Actuator
-### 官网地址
-https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html#actuator.enablin
+### 官网文档
+[Spring Boot Actuator](https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html#actuator.enablin)
 
-### 基础应用
+### 基本使用
 1、添加Actuator依赖。
 ~~~xml
 <dependencies>
