@@ -1,5 +1,37 @@
-## Ribbon源码分析
-### 猜想
+* [猜想](#猜想)
+* [分析验证](#分析验证)
+  * [Spring容器加载](#spring容器加载)
+     * [spring.factories文件](#springfactories文件)
+     * [RibbonAutoConfiguration](#ribbonautoconfiguration)
+     * [LoadBalancerAutoConfiguration](#loadbalancerautoconfiguration)
+     * [AsyncLoadBalancerAutoConfiguration](#asyncloadbalancerautoconfiguration)
+     * [RibbonClients注解类](#ribbonclients注解类)
+     * [RibbonClientConfigurationRegistrar](#ribbonclientconfigurationregistrar)
+     * [小结](#小结)
+  * [Spring Cloud 负载均衡(spring-cloud-commons)](#spring-cloud-负载均衡spring-cloud-commons)
+     * [LoadBalanced](#loadbalanced)
+     * [RestTemplateCustomizer 接口](#resttemplatecustomizer-接口)
+     * [LoadalancerInterceptor](#loadalancerinterceptor)
+     * [LoadBalancerRequestFactory](#loadbalancerrequestfactory)
+     * [ServiceRequestWrapper](#servicerequestwrapper)
+  * [Ribbon Spring Cloud相关类(spring-cloud-netflix-ribbon)](#ribbon-spring-cloud相关类spring-cloud-netflix-ribbon)
+     * [RibbonLoadBalancerClient](#ribbonloadbalancerclient)
+     * [SpringClientFactory](#springclientfactory)
+     * [RibbonClientConfiguration](#ribbonclientconfiguration)
+     * [PropertiesFactory](#propertiesfactory)
+  * [Ribbon 核心接口/类](#ribbon-核心接口类)
+     * [IClientConfig](#iclientconfig)
+     * [ILoadBalancer](#iloadbalancer)
+     * [IRule](#irule)
+     * [IPing](#iping)
+     * [ServerList](#serverlist)
+     * [ServerListUpdater](#serverlistupdater)
+     * [ServerListFilter](#serverlistfilter)
+     * [RibbonLoadBalancerContext](#ribbonloadbalancercontext)
+     * [RetryHandler](#retryhandler)
+     * [ServerIntrospector](#serverintrospector)
+     * [CommonClientConfigKey](#commonclientconfigkey)
+## 猜想
 Ribbon 基本使用步骤：
 
 1. 引入spring-cloud-starter-netflix-ribbon依赖。
@@ -11,18 +43,19 @@ Ribbon 基本使用步骤：
 2. 添加了`@LoadBalanced`修饰的RestTemplate一定是做了相应的处理；
 3. Ribbon一定是通过某种方法读取到了配置文件内容，创建了相应的实例，并根据<client>区分不同的实例。
 
-### 分析验证
-#### Spring容器加载
+## 分析验证
+### Spring容器加载
 根据Spring Bean加载的过程探索Ribbon 源码实现。
 
 Ribbon Bean的加载是基于Spring自动装配机制实现的，参见`spring-cloud-netflix-ribbon-2.2.3.RELEASE.jar!META-INF/spring.factories`。
-* spring.factories文件内容
+#### spring.factories文件
 ~~~properties
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration
 ~~~
 > `RibbonAutoConfiguration` 配置类作为自动装配的起始入口。
-* RibbonAutoConfiguration 实现Ribbon 核心类的加载。初始化`SpringClientFactory`、`RibbonLoadBalancerClient`、`PropertiesFactory`
+#### RibbonAutoConfiguration
+RibbonAutoConfiguration 实现Ribbon 核心类的加载。初始化`SpringClientFactory`、`RibbonLoadBalancerClient`、`PropertiesFactory`
 ~~~java
 @Configuration
 @Conditional(RibbonAutoConfiguration.RibbonClassesConditions.class)
@@ -61,14 +94,14 @@ public class RibbonAutoConfiguration {
 > * `LoadBalancerAutoConfiguration`
 > * `AsyncLoadBalancerAutoConfiguration`
 
-* **LoadBalancerAutoConfiguration**
+#### LoadBalancerAutoConfiguration
 是Spring Cloud提供的LoadBalancer配置类。
 实现了`SmartInitializingSingleton`、`LoadBalancerInterceptor`、`RestTemplateCustomizer`、`LoadBalancerRequestFactory`初始化。
 
-* AsyncLoadBalancerAutoConfiguration
+#### AsyncLoadBalancerAutoConfiguration
 使用AsyncRestTemplate情况下，初始化Ribbon对应的 Interceptor、Customizer。
 
-* RibbonClients注解类
+#### RibbonClients注解类
 ~~~java
 @Configuration(proxyBeanMethods = false)
 @Retention(RetentionPolicy.RUNTIME)
@@ -85,7 +118,7 @@ public @interface RibbonClients {
 }
 ~~~
 
-* RibbonClientConfigurationRegistrar
+#### RibbonClientConfigurationRegistrar
 针对`RibbonClients`、`RibbonClient`注解定义的Ribbon client进行解析，在容器中注入RibbonClientSpecification，beanName=<name>.RibbonClientSpecification。
 
 #### 小结
@@ -103,13 +136,12 @@ public @interface RibbonClients {
 > 2. SpringClientFactory
 > 3. RibbonClientConfiguration
 > 4. PropertiesFactory
->
 
 
 
 ### Spring Cloud 负载均衡(spring-cloud-commons)
 
-* LoadBalanced
+#### LoadBalanced
 继承了`@Qualifier`注解。
 在`LoadBalancerAutoConfiguration`中针对添加了`LoadBalanced`注解修饰的`RestTemplate`实例，自动添加`LoadBalancerInterceptor`拦截器。
 ~~~java
@@ -133,7 +165,7 @@ public class LoadBalancerAutoConfiguration {
 }
 ~~~
 
-* RestTemplateCustomizer 接口
+#### RestTemplateCustomizer 接口
 ~~~java
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingClass("org.springframework.retry.support.RetryTemplate")
@@ -153,7 +185,7 @@ static class LoadBalancerInterceptorConfig {
 }
 ~~~
 
-* LoadalancerInterceptor
+#### LoadalancerInterceptor
 实现ClientHttpRequestInterceptor接口，对RestTemplate 进行拦截。
 ~~~java
 public class LoadBalancerInterceptor implements ClientHttpRequestInterceptor {
@@ -171,7 +203,7 @@ public class LoadBalancerInterceptor implements ClientHttpRequestInterceptor {
 }
 ~~~
 
-* LoadBalancerRequestFactory
+#### LoadBalancerRequestFactory
 工厂类，创建LoadBalancerRequest实例。
 ~~~java
 public class LoadBalancerRequestFactory {
@@ -194,7 +226,7 @@ public class LoadBalancerRequestFactory {
 }
 ~~~
 
-* ServiceRequestWrapper
+#### ServiceRequestWrapper
 集成HttpRequestWrapper的包装类，实现URI的替换。
 ~~~java
 public class ServiceRequestWrapper extends HttpRequestWrapper {
@@ -210,8 +242,10 @@ public class ServiceRequestWrapper extends HttpRequestWrapper {
 ### Ribbon Spring Cloud相关类(spring-cloud-netflix-ribbon)
 
 
-* `RibbonLoadBalancerClient`实现`org.springframework.cloud.client.loadbalancer.LoadBalancerClient`接口，Rebbion客户端负载均衡整合Spring Cloud的核心类。
-    * reconstructURI()，调用：ServiceRequestWrapper.getURI()
+#### RibbonLoadBalancerClient
+`RibbonLoadBalancerClient`实现`org.springframework.cloud.client.loadbalancer.LoadBalancerClient`接口，Rebbion客户端负载均衡整合Spring Cloud的核心类。
+主要关注`reconstructURI(...)`、`execute(...)`两个方法，其中`reconstructURI`在`ServiceRequestWrapper.getURI()`中被调用；
+`execute`在`LoadBalancerInterceptor.intercept()`中被调用。
 ~~~java
 public class RibbonLoadBalancerClient implements LoadBalancerClient { 
 	@Override
@@ -294,7 +328,7 @@ public class RibbonLoadBalancerClient implements LoadBalancerClient {
 	}
 }
 ~~~
-* SpringClientFactory
+#### SpringClientFactory
 ~~~java
 public class SpringClientFactory extends NamedContextFactory<RibbonClientSpecification> {
     static final String NAMESPACE = "ribbon";
@@ -305,7 +339,7 @@ public class SpringClientFactory extends NamedContextFactory<RibbonClientSpecifi
 }
 ~~~
 > 继承NamedContextFactory抽象类，实现根据name值（serviceId）创建对应的ApplicationContext子容器。
-* RibbonClientConfiguration
+#### RibbonClientConfiguration
 ~~~java
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties
@@ -321,47 +355,47 @@ public class RibbonClientConfiguration {
     /* 实现IClientConfig、IRule、IPing、ILoadBalancer、RibbonLoadBalancerContext等核心类的初始化 */
 }
 ~~~
-* PropertiesFactory
+#### PropertiesFactory
 实现Ribbon Client 自定义配置参数创建，对应Spring Cloud Netflix 文档中7.4章节。
 
 
-### Ribbon 核心类
-* IClientConfig
-    * DefaultClientConfigImpl
+### Ribbon 核心接口/类
+#### IClientConfig
+* DefaultClientConfigImpl
     
-* ILoadBalancer
-    * ZoneAwareLoadBalancer（默认) 
+#### ILoadBalancer
+* ZoneAwareLoadBalancer（默认) 
 > Ping: 设置Ping时同步启动PingTask（Timer，默认10S执行一次），Pinger 调用IPingStrategy + IPing 实现。
 > Rule: 路由规则
 > ServerList: 服务列表
 > ServerListUpdater: 服务列表更新         
 
-* IRule
-    * ZoneAvoidanceRule（默认）
-    * RandomRule
-    * ResponseTimeWeightedRule
+#### IRule
+* ZoneAvoidanceRule（默认）
+* RandomRule
+* ResponseTimeWeightedRule
 
-* IPing
-    * DummyPing（默认）
-    * NIWSDiscoveryPing
+#### IPing
+* DummyPing（默认）
+* NIWSDiscoveryPing
 > 
-* ServerList
-    * ConfigurationBasedServerList（默认）
-    * DomainExtractingServerList（Eureka）
+#### ServerList
+* ConfigurationBasedServerList（默认）
+* DomainExtractingServerList（Eureka）
 > 服务列表获取
-* ServerListUpdater
-    * PollingServerListUpdater（默认)
+#### ServerListUpdater
+* PollingServerListUpdater（默认)
+* EurekaNotificationServerListUpdater
 > 定时更新服务列表（ScheduledThreadPoolExecutor）
-* ServerListFilter
-    * ZonePreferenceServerListFilter
+#### ServerListFilter
+* ZonePreferenceServerListFilter
     
-* RibbonLoadBalancerContext
-    * PollingServerListUpdater
+#### RibbonLoadBalancerContext
     
-* RetryHandler
+#### RetryHandler
 
-* ServerIntrospector
-    * DefaultServerIntrospector
-    
-* CommonClientConfigKey
+#### ServerIntrospector
+* DefaultServerIntrospector
+
+#### CommonClientConfigKey
     
