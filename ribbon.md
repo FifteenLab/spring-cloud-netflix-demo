@@ -1,7 +1,8 @@
-### 源码分析
+## Ribbon源码分析
+### 猜想
 Ribbon 基本使用步骤：
 
-1. 引入spring-cloud-starter-netflix-ribbon依赖后即可使用Ribbon。
+1. 引入spring-cloud-starter-netflix-ribbon依赖。
 2. 在RestTemplate的定义上添加`@LoadBalanced`。
 3. application.properties 配置<client>.ribbon.listOfServers。
 
@@ -10,6 +11,7 @@ Ribbon 基本使用步骤：
 2. 添加了`@LoadBalanced`修饰的RestTemplate一定是做了相应的处理；
 3. Ribbon一定是通过某种方法读取到了配置文件内容，创建了相应的实例，并根据<client>区分不同的实例。
 
+### 分析验证
 #### Spring容器加载
 根据Spring Bean加载的过程探索Ribbon 源码实现。
 
@@ -208,7 +210,7 @@ public class ServiceRequestWrapper extends HttpRequestWrapper {
 ### Ribbon Spring Cloud相关类(spring-cloud-netflix-ribbon)
 
 
-实现`org.springframework.cloud.client.loadbalancer.LoadBalancerClient`接口，Rebbion客户端负载均衡整合Spring Cloud的核心类。
+* `RibbonLoadBalancerClient`实现`org.springframework.cloud.client.loadbalancer.LoadBalancerClient`接口，Rebbion客户端负载均衡整合Spring Cloud的核心类。
     * reconstructURI()，调用：ServiceRequestWrapper.getURI()
 ~~~java
 public class RibbonLoadBalancerClient implements LoadBalancerClient { 
