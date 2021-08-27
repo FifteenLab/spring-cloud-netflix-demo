@@ -8,6 +8,7 @@
      * [使用OkHttp](#使用okhttp)
      * [使用HttpClient](#使用httpclient)
      * [使用HttpClient5](#使用httpclient5)
+  * [源码分析](#源码分析-1)
 * [Eureka Server](#eureka-server)
   * [官网文档](#官网文档-1)
   * [基本使用](#基本使用-2)
@@ -105,7 +106,10 @@ feign.okhttp.enabled=true
 #### 使用HttpClient
 
 #### 使用HttpClient5
- 
+
+### 源码分析
+参见[Feign.md](feign.md)
+
 ## Eureka Server
 ### 官网文档
 [Spring Cloud Netflix Eureka Server](https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#spring-cloud-eureka-server)
