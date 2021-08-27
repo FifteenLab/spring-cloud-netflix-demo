@@ -4,7 +4,10 @@
   * [源码分析](#源码分析)
 * [Feign](#feign)
   * [基本使用](#基本使用-1)
-  * [使用OkHttp](#使用okhttp)
+  * [Client 扩展](#client-扩展)
+     * [使用OkHttp](#使用okhttp)
+     * [使用HttpClient](#使用httpclient)
+     * [使用HttpClient5](#使用httpclient5)
 * [Eureka Server](#eureka-server)
   * [官网文档](#官网文档-1)
   * [基本使用](#基本使用-2)
@@ -85,16 +88,24 @@ public class OrderServerApplication {
 }
 ~~~
 
-### 使用OkHttp
+### Client 扩展
+#### 使用OkHttp
 1、添加OkHttp依赖包。
 ~~~xml
-
+<dependency>
+    <groupId>io.github.openfeign</groupId>
+    <artifactId>feign-okhttp</artifactId>
+    <version>10.12</version>
+</dependency>
 ~~~
-2、Feign 开启OkHttp。
+2、修改application.properties配置文件，开启OkHttp Client。
 ~~~properties
-
+feign.okhttp.enabled=true
 ~~~
+#### 使用HttpClient
 
+#### 使用HttpClient5
+ 
 ## Eureka Server
 ### 官网文档
 [Spring Cloud Netflix Eureka Server](https://docs.spring.io/spring-cloud-netflix/docs/2.2.9.RELEASE/reference/html/#spring-cloud-eureka-server)
